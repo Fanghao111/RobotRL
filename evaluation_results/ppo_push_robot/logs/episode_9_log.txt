@@ -1,0 +1,13 @@
+Episode 9 Results
+========================================
+
+Status: SUCCESS
+Total Reward: 108.2892
+Total Steps: 35
+Final Distance to Target: 0.0587m
+
+Target Position: (0.7130, 0.0333)
+Object Start: (0.3473, 0.0419)
+Object End: (0.6748, -0.0113)
+EE Start: (0.2928, 0.2055)
+EE End: (0.7275, -0.2606)

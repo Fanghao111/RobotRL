@@ -1,0 +1,13 @@
+Episode 19 Results
+========================================
+
+Status: SUCCESS
+Total Reward: 113.9063
+Total Steps: 15
+Final Distance to Target: 0.0885m
+
+Target Position: (0.8936, 0.2949)
+Object Start: (0.4997, 0.0430)
+Object End: (0.8713, 0.2093)
+EE Start: (0.5096, -0.1530)
+EE End: (0.7819, 0.0520)

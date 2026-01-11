@@ -1,0 +1,13 @@
+Episode 14 Results
+========================================
+
+Status: SUCCESS
+Total Reward: 117.3756
+Total Steps: 29
+Final Distance to Target: 0.0863m
+
+Target Position: (0.8408, 0.2683)
+Object Start: (0.4091, -0.1153)
+Object End: (0.8519, 0.1826)
+EE Start: (0.3693, 0.1213)
+EE End: (0.8042, 0.0057)

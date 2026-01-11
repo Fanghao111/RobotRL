@@ -1,0 +1,13 @@
+Episode 15 Results
+========================================
+
+Status: FAILED
+Total Reward: -3.5660
+Total Steps: 200
+Final Distance to Target: 0.7359m
+
+Target Position: (0.8213, -0.0844)
+Object Start: (0.5301, -0.7603)
+Object End: (0.5306, -0.7605)
+EE Start: (0.4154, -0.1021)
+EE End: (-0.2285, -0.7714)

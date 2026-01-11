@@ -1,0 +1,13 @@
+Episode 16 Results
+========================================
+
+Status: SUCCESS
+Total Reward: 114.8075
+Total Steps: 17
+Final Distance to Target: 0.0980m
+
+Target Position: (0.7858, 0.1358)
+Object Start: (0.3786, -0.1395)
+Object End: (0.7268, 0.0576)
+EE Start: (0.4097, -0.3522)
+EE End: (0.6460, -0.1333)
