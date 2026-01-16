@@ -1,103 +1,197 @@
-# Robot Arm Pushing Task with RL (PPO)
+# Push Task RL - Unified Framework
 
-This project implements a Reinforcement Learning agent using PPO (Proximal Policy Optimization) to train a Kuka iiwa robot arm to push a block to a target location in a PyBullet simulation.
+A unified reinforcement learning framework for robot arm pushing tasks, supporting both **PyBullet** (CPU) and **Isaac Lab** (GPU) backends with **Stable Baselines 3**.
 
-## Prerequisites
+## Features
 
-- Python 3.8+
-- Virtual environment (recommended)
-
-## Installation
-
-1. Install the required dependencies:
-
-```bash
-pip install -r requirements.txt
-```
+- **Unified Interface**: Same API for both PyBullet and Isaac Lab environments
+- **Backend Switching**: Seamlessly switch between CPU (PyBullet) and GPU (Isaac Lab) training
+- **Stable Baselines 3**: Uses PPO algorithm with identical hyperparameters across backends
+- **Configurable**: YAML-based configuration for environment and training parameters
+- **Curriculum Learning**: Support for multi-stage training pipelines
 
 ## Project Structure
 
 ```
 RL/
-├── env/                    # 环境模块
+├── envs/                       # Unified environment module
 │   ├── __init__.py
-│   └── push_env.py         # Custom Gymnasium environment
-├── scripts/                # 辅助脚本
-│   ├── analyze_logs.py     # TensorBoard日志分析
-│   ├── analyze_sim_logs.py # 仿真日志分析
-│   └── check_model_arch.py # 检查模型架构
-├── models/                 # 训练好的模型
-│   ├── ppo_push_robot.zip
-│   ├── ppo_push_robot_image.zip
-│   └── *.pkl               # VecNormalize统计
-├── logs/                   # 运行日志
-├── train_unified.py        # 统一训练脚本
-├── evaluate_unified.py     # 统一评估脚本
-├── simple_push_test.py     # 脚本策略测试
-└── requirements.txt        # 依赖列表
+│   ├── factory.py              # Environment factory (make_env, make_vec_env)
+│   ├── base/                   # Base classes
+│   │   ├── __init__.py
+│   │   └── base_env.py         # BasePushEnv, BasePushEnvConfig
+│   ├── pybullet/               # PyBullet backend
+│   │   ├── __init__.py
+│   │   └── push_env.py         # PyBulletPushEnv
+│   └── isaac_lab/              # Isaac Lab backend
+│       ├── __init__.py
+│       ├── push_env.py         # IsaacLabPushEnv, IsaacLabVecEnvWrapper
+│       └── isaac_push_env.py   # Internal Isaac Lab implementation
+│
+├── configs/                    # Configuration files
+│   ├── config.yaml             # Default configuration
+│   ├── config-s1.yaml          # Stage 1 curriculum config
+│   ├── config-s2.yaml          # Stage 2 curriculum config
+│   └── config-s3.yaml          # Stage 3 curriculum config
+│
+├── train.py                    # Unified training script
+├── evaluate.py                 # Unified evaluation script
+├── models/                     # Trained models output
+└── requirements.txt            # Dependencies
 ```
 
-## Usage
+## Installation
 
-**Note**: Please run all commands in the `fhz-rl` conda environment.
+### Basic Installation (PyBullet only)
 
-### 1. Training
-
-To train the agent, use `train_unified.py`. It supports both observation types ('state' or 'image').
-
-**Train using state observations (Default):**
 ```bash
-python train_unified.py --obs-type state --timesteps 1000000
+pip install -r requirements.txt
 ```
-This trains an MLP policy and saves to `checkpoints/` and `ppo_push_robot.zip`.
 
-**Train using image observations:**
+### Full Installation (with Isaac Lab)
+
+Isaac Lab requires NVIDIA Isaac Sim. Follow the [official installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation.html).
+
+## Quick Start
+
+### Training with PyBullet (CPU)
+
 ```bash
-python train_unified.py --obs-type image --timesteps 1000000
+# Basic training
+python train.py --backend pybullet --timesteps 1000000
+
+# With checkpoint saving
+python train.py --backend pybullet --timesteps 1000000 --save-freq 100000
+
+# Custom config
+python train.py --backend pybullet --config config-s2.yaml --timesteps 3000000
 ```
-This trains a CNN policy and saves to `checkpoints_image/` and `ppo_push_robot_image.zip`.
 
-**Additional Arguments:**
-- `--save-freq`: Checkpoint saving frequency (default: 50000)
-- `--load-checkpoint`: Path to a .zip file to resume training
-- `--n-envs`: Number of parallel environments (default: 4)
+### Training with Isaac Lab (GPU)
 
-### 2. Evaluation
-
-To evaluate the trained agent, use `evaluate_unified.py`.
-
-**Evaluate state model:**
 ```bash
-python evaluate_unified.py --mode state
-# Use --save_images to save visualization frames
-python evaluate_unified.py --mode state --save_images
+# GPU-accelerated training with 1024 parallel envs
+python train.py --backend isaac_lab --timesteps 1000000 --n-envs 1024
+
+# Headless training on server
+python train.py --backend isaac_lab --n-envs 4096 --timesteps 2000000
 ```
 
-**Evaluate image model:**
+### Evaluation
+
 ```bash
-python evaluate_unified.py --mode image --save_images
+# Evaluate latest model
+python evaluate.py --backend pybullet
+
+# Evaluate with video recording
+python evaluate.py --backend pybullet --save-video
+
+# Evaluate specific model
+python evaluate.py --model-path ./models/xxx/ppo_push_robot.zip
+
+# Evaluate all checkpoints in directory
+python evaluate.py --model-path ./models/xxx/checkpoints/
 ```
 
-**Evaluate specific checkpoint(s):**
+### Resume Training
+
 ```bash
-# Evaluate a single file
-python evaluate_unified.py --model_path checkpoints/ppo_push_robot_100000_steps.zip
-
-# Evaluate all checkpoints in a directory (sorted by steps)
-python evaluate_unified.py --model_path checkpoints/
+python train.py --backend pybullet --load-checkpoint ./models/xxx/ --timesteps 500000
 ```
-
-Results are saved to `evaluation_results/`.
 
 ## Environment Details
 
-- **Robot**: Kuka iiwa 7-DOF arm.
-- **Task**: Push a red cube to a green target zone.
-- **Observation Space**: 9-dimensional vector (End effector pos, Object pos, Target pos).
-- **Action Space**: 3-dimensional vector (End effector velocity dx, dy, dz).
-- **Reward**: Negative distance to target + bonus for reaching target.
+### Task Description
 
-## Notes
+The robot arm must push a rectangular object to a target position and orientation.
 
-- The environment uses Inverse Kinematics to control the robot arm based on desired end-effector velocity.
-- Training time may vary depending on hardware. 100k timesteps is a starting point; more may be needed for optimal performance.
+- **Robot**: Kuka iiwa 7-DOF (PyBullet) / Franka Panda (Isaac Lab)
+- **Task**: Push red block to green target zone with correct orientation
+- **Success**: Position error < 5cm AND orientation error < threshold
+
+### Observation Space (19D state vector)
+
+| Feature | Dims | Description |
+|---------|------|-------------|
+| ee_xy | 2 | End-effector position |
+| obj_xy | 2 | Object position |
+| target_xy | 2 | Target position |
+| ee_to_obj_xy | 2 | Relative: EE to object |
+| obj_to_target_xy | 2 | Relative: object to target |
+| obj_vel_xy | 2 | Object linear velocity |
+| obj_yaw_sincos | 2 | Object orientation (sin/cos) |
+| target_yaw_sincos | 2 | Target orientation (sin/cos) |
+| yaw_error_sincos | 2 | Orientation error (sin/cos) |
+| obj_angular_vel | 1 | Object angular velocity (Z) |
+
+### Action Space (3D)
+
+- Continuous delta position: (dx, dy, dz)
+- dz is ignored (fixed end-effector height)
+- Range: [-1, 1], scaled by 0.1
+
+### Reward Structure
+
+1. **Position Progress**: Incremental reward for moving object closer to target
+2. **Orientation Progress**: Incremental reward for reducing yaw error
+3. **Coupling Bonus**: Extra reward when both improve simultaneously
+4. **Alignment**: Reward for pushing from correct direction
+5. **EE Approach**: Reward for end-effector approaching object
+6. **Success Bonus**: Large reward upon task completion
+7. **Step Penalty**: Small penalty per step
+
+## Configuration
+
+Configuration is done via YAML files. Key sections:
+
+```yaml
+# Environment settings
+env:
+  max_episode_steps: 200
+  success_threshold: 0.05      # Position threshold (m)
+  orientation_threshold: 0.15  # Orientation threshold (rad)
+
+# Reward coefficients
+reward:
+  position_progress_coef: 30.0
+  orientation_progress_coef: 15.0
+  success_bonus: 100.0
+
+# Training settings
+training:
+  state:
+    learning_rate: 0.0001
+    net_arch_pi: [256, 256, 128]
+    net_arch_vf: [256, 256, 128]
+```
+
+## Backend Comparison
+
+| Feature | PyBullet | Isaac Lab |
+|---------|----------|-----------|
+| Device | CPU | GPU (CUDA) |
+| Parallel Envs | 12 (SubprocVecEnv) | 1024+ (native) |
+| Training Speed | ~1-2 hours / 1M steps | ~5-10 min / 1M steps |
+| Robot | Kuka iiwa | Franka Panda |
+| Dependencies | pybullet | Isaac Sim |
+
+## Programmatic Usage
+
+```python
+from envs import make_env, make_vec_env
+from envs.base import BasePushEnvConfig
+
+# Create single environment
+env = make_env(backend="pybullet", obs_type="state")
+
+# Create vectorized environment
+vec_env = make_vec_env(backend="pybullet", n_envs=12)
+
+# With custom config
+cfg = BasePushEnvConfig(
+    max_episode_steps=200,
+    success_threshold=0.05,
+    orientation_threshold=0.15,
+)
+env = make_env(backend="pybullet", cfg=cfg)
+```
